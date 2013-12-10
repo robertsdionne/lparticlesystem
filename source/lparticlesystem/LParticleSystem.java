@@ -9,8 +9,8 @@ import processing.core.PVector;
 @SuppressWarnings("serial")
 public class LParticleSystem extends PApplet {
   
-  private final Map<Character, Boolean> keys = new HashMap<Character, Boolean>();
-  private final Map<Integer, Boolean> keyCodes = new HashMap<Integer, Boolean>();
+  private final Map<Character, Boolean> keys = new HashMap<>();
+  private final Map<Integer, Boolean> keyCodes = new HashMap<>();
   private LSystem lsystem;
   private PVector eye = new PVector();
   private float altitude = 0.0f, azimuth = 0.0f;
@@ -36,7 +36,7 @@ public class LParticleSystem extends PApplet {
     
     stroke(255);
     strokeWeight(0.1f);
-    lsystem.draw(12, this);
+    lsystem.draw(16, this);
   }
 
   private void input() {

@@ -75,7 +75,7 @@ public class LSystem {
   public void draw(final int iterations, final PApplet applet) {
     final String system = maybeCacheSystem(iterations);
     State state = new State();
-    final Deque<State> stack = new ArrayDeque<State>(iterations);
+    final Deque<State> stack = new ArrayDeque<>(iterations);
     applet.scale(state.stepSize);
     applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
     for (int i = 0; i < system.length(); ++i) {
