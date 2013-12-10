@@ -44,15 +44,12 @@ public class LSystem {
     public static final float SIZE_GROWTH = 0.1f;
     public static final float ANGLE_GROWTH = 0.2f; 
     
-    public float x0 = 0.0f, y0 = 0.0f;
-    public float x1 = 0.0f, y1 = 0.0f;
-    public float orientation = 0.0f;
     public float stepAngle = 30.0f;
     public float stepSize = 10.0f;
     
-    public float radians() {
-      return (float) Math.PI / 180.0f * orientation;
-    }
+    public float h = 0.0f;
+    public float s = 0.5f;
+    public float b = 0.5f;
     
     public State clone() {
       try {
@@ -79,44 +76,70 @@ public class LSystem {
     final String system = maybeCacheSystem(iterations);
     State state = new State();
     final Deque<State> stack = new ArrayDeque<State>(iterations);
+    applet.scale(state.stepSize);
+    applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
     for (int i = 0; i < system.length(); ++i) {
       switch (system.charAt(i)) {
         case 'F': {
-          state.x0 = state.x1;
-          state.y0 = state.y1;
-          state.x1 += state.stepSize * Math.cos(state.radians());
-          state.y1 += state.stepSize * Math.sin(state.radians());
-          applet.line(state.x0, state.y0, 0.0f, state.x1, state.y1, 0.0f);
+          applet.line(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
+          applet.translate(1.0f, 0.0f, 0.0f);
           break;
         } case '+': {
-          state.orientation += state.stepAngle;
+          state.h += state.stepAngle;
+          applet.rotateZ(PApplet.radians(state.stepAngle));
           break;
         } case '-': {
-          state.orientation -= state.stepAngle;
+          state.h -= state.stepAngle;
+          applet.rotateZ(PApplet.radians(-state.stepAngle));
+          break;
+        } case '/': {
+          state.h += state.stepAngle;
+          applet.rotateX(PApplet.radians(state.stepAngle));
+          break;
+        } case '\\': {
+          state.h -= state.stepAngle;
+          applet.rotateX(PApplet.radians(-state.stepAngle));
+          break;
+        } case '}': {
+          state.h += state.stepAngle;
+          applet.rotateY(PApplet.radians(state.stepAngle));
+          break;
+        } case '{': {
+          state.h -= state.stepAngle;
+          applet.rotateY(PApplet.radians(-state.stepAngle));
           break;
         } case '<': {
-          state.stepSize *= (1.0f + State.SIZE_GROWTH);
+          state.s *= (1.0f + State.SIZE_GROWTH);
+          applet.scale(1.0f + State.SIZE_GROWTH);
           break;
         } case '>': {
-          state.stepSize *= (1.0f - State.SIZE_GROWTH);
+          state.s *= (1.0f - State.SIZE_GROWTH);
+          applet.scale(1.0f - State.SIZE_GROWTH);
           break;
         } case '(': {
+          state.b *= (1.0f + State.ANGLE_GROWTH);
           state.stepAngle *= (1.0f - State.ANGLE_GROWTH);
           break;
         } case ')': {
+          state.b *= (1.0f - State.ANGLE_GROWTH);
           state.stepAngle *= (1.0f + State.ANGLE_GROWTH);
           break;
         } case '[': {
+          applet.pushMatrix();
+          applet.pushStyle();
           stack.push(state.clone());
           break;
         } case ']': {
+          applet.popMatrix();
+          applet.popStyle();
           state = stack.pop();
           break;
         } case '!': {
           state.stepAngle *= -1.0f;
           break;
         } case '|': {
-          state.orientation += 180.0f;
+          applet.rotateZ(PApplet.radians(180.0f));
           break;
         } default: {
           break;
