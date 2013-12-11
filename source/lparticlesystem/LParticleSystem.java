@@ -8,17 +8,28 @@ import processing.core.PVector;
 
 @SuppressWarnings("serial")
 public class LParticleSystem extends PApplet {
+
+  private static final PVector X = new PVector(1.0f, 0.0f, 0.0f);
+  private static final PVector Y = new PVector(0.0f, 1.0f, 0.0f);
+  private static final PVector NZ = new PVector(0.0f, 0.0f, -1.0f);
   
   private final Map<Character, Boolean> keys = new HashMap<>();
   private final Map<Integer, Boolean> keyCodes = new HashMap<>();
   private LSystem lsystem;
-  private PVector eye = new PVector();
-  private float altitude = 0.0f, azimuth = 0.0f;
+  private PVector eye = new PVector(),
+      forward = new PVector(0.0f, 0.0f, -1.0f),
+      right = new PVector(1.0f, 0.0f, 0.0f),
+      up = new PVector(0.0f, 1.0f, 0.0f);
+  private Quaternion orientation = new Quaternion();
 
   @Override public void setup() {
     size(1024, 768, P3D);
     smooth();
     lsystem = LSystem.load("lparticlesystem/lsystem.json");
+    
+    final Quaternion q = Quaternion.fromAxisAngle(right, (float) Math.PI / 2.0f);
+    final PVector result = q.transform(forward);
+    System.out.println(result.x + " " + result.y + " " + result.z);
   }
   
   @Override public void draw() {
@@ -28,47 +39,58 @@ public class LParticleSystem extends PApplet {
     input();
 
     camera(0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, -1.0f,
-        0.0f, 1.0f, 0.0f);
-    translate(-eye.x, eye.y, -eye.z - 100.0f);
-    rotateX(-altitude);
-    rotateY(-azimuth);
+        NZ.x, NZ.y, NZ.z,
+        Y.x, Y.y, Y.z);
+    final Quaternion axisAngle = orientation.toAxisAngle();
+    rotate(axisAngle.w, axisAngle.x, axisAngle.y, axisAngle.z);
+    translate(-eye.x, -eye.y, -eye.z);
     
     stroke(255);
     strokeWeight(0.1f);
-    lsystem.draw(16, this);
+    lsystem.draw(mouseY / 50, this);
+    
+    final Quaternion inverse = orientation.reciprocal();
+    forward = inverse.transform(NZ);
+    right = inverse.transform(X);
+    up = inverse.transform(Y);
   }
 
   private void input() {
     if (keys.containsKey('a') && keys.get('a')) {
-      eye.x -= 1.0f;
+      eye.sub(right);
     }
     if (keys.containsKey('d') && keys.get('d')) {
-      eye.x += 1.0f;
+      eye.add(right);
     }
     if (keys.containsKey('q') && keys.get('q')) {
-      eye.y += 1.0f;
+      eye.sub(up);
     }
     if (keys.containsKey('z') && keys.get('z')) {
-      eye.y -= 1.0f;
+      eye.add(up);
     }
     if (keys.containsKey('w') && keys.get('w')) {
-      eye.z -= 1.0f;
+      eye.add(forward);
     }
     if (keys.containsKey('s') && keys.get('s')) {
-      eye.z += 1.0f;
+      eye.sub(forward);
     }
     if (keyCodes.containsKey(RIGHT) && keyCodes.get(RIGHT)) {
-      azimuth -= 0.1f;
+      orientation = Quaternion.fromAxisAngle(Y, 0.1f).times(orientation);
     }
     if (keyCodes.containsKey(LEFT) && keyCodes.get(LEFT)) {
-      azimuth += 0.1f;
+      orientation = Quaternion.fromAxisAngle(Y, -0.1f).times(orientation);
     }
     if (keyCodes.containsKey(DOWN) && keyCodes.get(DOWN)) {
-      altitude -= 0.1f;
+      orientation = Quaternion.fromAxisAngle(X, -0.1f).times(orientation);
     }
     if (keyCodes.containsKey(UP) && keyCodes.get(UP)) {
-      altitude += 0.1f;
+      orientation = Quaternion.fromAxisAngle(X, 0.1f).times(orientation);
+    }
+    if (keys.containsKey(',') && keys.get(',')) {
+      orientation = Quaternion.fromAxisAngle(NZ, -0.1f).times(orientation);
+    }
+    if (keys.containsKey('.') && keys.get('.')) {
+      orientation = Quaternion.fromAxisAngle(NZ, 0.1f).times(orientation);
     }
   }
 

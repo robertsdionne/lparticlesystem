@@ -41,7 +41,7 @@ public class LSystem {
   
   private static class State implements Cloneable {
     
-    public static final float SIZE_GROWTH = 0.1f;
+    public static final float SIZE_GROWTH = -0.1f;
     public static final float ANGLE_GROWTH = 0.2f; 
     
     public float stepAngle = 30.0f;
