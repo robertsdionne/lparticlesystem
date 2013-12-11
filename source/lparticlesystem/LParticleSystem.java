@@ -23,13 +23,9 @@ public class LParticleSystem extends PApplet {
   private Quaternion orientation = new Quaternion();
 
   @Override public void setup() {
-    size(1024, 768, P3D);
+    size(1024, 768, OPENGL);
     smooth();
     lsystem = LSystem.load("lparticlesystem/lsystem.json");
-    
-    final Quaternion q = Quaternion.fromAxisAngle(right, (float) Math.PI / 2.0f);
-    final PVector result = q.transform(forward);
-    System.out.println(result.x + " " + result.y + " " + result.z);
   }
   
   @Override public void draw() {
