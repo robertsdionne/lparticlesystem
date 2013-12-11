@@ -52,42 +52,50 @@ public class LParticleSystem extends PApplet {
   }
 
   private void input() {
-    if (keys.containsKey('a') && keys.get('a')) {
+    if (keyDown('a')) {
       eye.sub(right);
     }
-    if (keys.containsKey('d') && keys.get('d')) {
+    if (keyDown('d')) {
       eye.add(right);
     }
-    if (keys.containsKey('q') && keys.get('q')) {
+    if (keyDown('q')) {
       eye.sub(up);
     }
-    if (keys.containsKey('z') && keys.get('z')) {
+    if (keyDown('z')) {
       eye.add(up);
     }
-    if (keys.containsKey('w') && keys.get('w')) {
+    if (keyDown('w')) {
       eye.add(forward);
     }
-    if (keys.containsKey('s') && keys.get('s')) {
+    if (keyDown('s')) {
       eye.sub(forward);
     }
-    if (keyCodes.containsKey(RIGHT) && keyCodes.get(RIGHT)) {
+    if (keyCodeDown(RIGHT)) {
       orientation = Quaternion.fromAxisAngle(Y, 0.1f).times(orientation);
     }
-    if (keyCodes.containsKey(LEFT) && keyCodes.get(LEFT)) {
+    if (keyCodeDown(LEFT)) {
       orientation = Quaternion.fromAxisAngle(Y, -0.1f).times(orientation);
     }
-    if (keyCodes.containsKey(DOWN) && keyCodes.get(DOWN)) {
+    if (keyCodeDown(DOWN)) {
       orientation = Quaternion.fromAxisAngle(X, -0.1f).times(orientation);
     }
-    if (keyCodes.containsKey(UP) && keyCodes.get(UP)) {
+    if (keyCodeDown(UP)) {
       orientation = Quaternion.fromAxisAngle(X, 0.1f).times(orientation);
     }
-    if (keys.containsKey(',') && keys.get(',')) {
+    if (keyCodeDown(',')) {
       orientation = Quaternion.fromAxisAngle(NZ, -0.1f).times(orientation);
     }
-    if (keys.containsKey('.') && keys.get('.')) {
+    if (keyCodeDown('.')) {
       orientation = Quaternion.fromAxisAngle(NZ, 0.1f).times(orientation);
     }
+  }
+  
+  private boolean keyDown(char key) {
+    return keys.containsKey(key) && keys.get(key);
+  }
+  
+  private boolean keyCodeDown(int keyCode) {
+    return keyCodes.containsKey(keyCode) && keyCodes.get(keyCode);
   }
 
   @Override public void keyPressed() {
