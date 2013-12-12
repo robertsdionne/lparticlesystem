@@ -42,6 +42,10 @@ class Quaternion {
   public PVector vector() {
     return new PVector(x, y, z);
   }
+  
+  public Quaternion get() {
+    return new Quaternion(w, x, y, z);
+  }
 
   public static Quaternion fromAxisAngle(final PVector axis, final float angle) {
     final PVector normalizedAxis = axis.get();

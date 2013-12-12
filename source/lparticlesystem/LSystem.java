@@ -53,7 +53,7 @@ public class LSystem {
     public static final float ANGLE_GROWTH = -0.138235f;
     
     public float stepAngle = -3963.7485f;
-    public float stepSize = 1.411f;
+    public float stepSize = 14.11f;
     
     public PVector position0 = new PVector(), position1 = new PVector();
     public Quaternion orientation = new Quaternion();
@@ -64,7 +64,11 @@ public class LSystem {
     
     public State clone() {
       try {
-        return (State) super.clone();
+        final State result = (State) super.clone();
+        result.position0 = position0.get();
+        result.position1 = position1.get();
+        result.orientation = orientation.get();
+        return result;
       } catch (final Throwable rethrown) {
         throw Throwables.propagate(rethrown);
       }
@@ -155,7 +159,7 @@ public class LSystem {
           break;
         } case '|': {
           state.orientation = Quaternion.fromAxisAngle(
-              X, PApplet.radians(180.0f)).times(state.orientation);
+              Z, PApplet.radians(180.0f)).times(state.orientation);
           break;
         } default: {
           break;
