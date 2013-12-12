@@ -16,7 +16,7 @@ public class LParticleSystem extends PApplet {
   private final Map<Character, Boolean> keys = new HashMap<>();
   private final Map<Integer, Boolean> keyCodes = new HashMap<>();
   private LSystem lsystem;
-  private PVector eye = new PVector(),
+  private PVector eye = new PVector(0.0f, 0.0f, 100.0f),
       forward = new PVector(0.0f, 0.0f, -1.0f),
       right = new PVector(1.0f, 0.0f, 0.0f),
       up = new PVector(0.0f, 1.0f, 0.0f);
@@ -42,8 +42,12 @@ public class LParticleSystem extends PApplet {
     translate(-eye.x, -eye.y, -eye.z);
     
     stroke(255);
-    strokeWeight(0.1f);
-    lsystem.draw(mouseY / 50, this);
+    strokeWeight(1.0f);
+    lsystem.draw(12, this);
+    strokeWeight(5.0f);
+    line(-100, 0, 0, 100, 0, 0);
+    line(0, -100, 0, 0, 100, 0);
+    line(0, 0, -100, 0, 0, 100);
     
     final Quaternion inverse = orientation.reciprocal();
     forward = inverse.transform(NZ);
@@ -82,10 +86,10 @@ public class LParticleSystem extends PApplet {
     if (keyCodeDown(UP)) {
       orientation = Quaternion.fromAxisAngle(X, 0.1f).times(orientation);
     }
-    if (keyCodeDown(',')) {
+    if (keyDown(',')) {
       orientation = Quaternion.fromAxisAngle(NZ, -0.1f).times(orientation);
     }
-    if (keyCodeDown('.')) {
+    if (keyDown('.')) {
       orientation = Quaternion.fromAxisAngle(NZ, 0.1f).times(orientation);
     }
   }
