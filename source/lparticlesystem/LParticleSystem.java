@@ -1,10 +1,17 @@
 package lparticlesystem;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.JFileChooser;
+import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
+
 import processing.core.PApplet;
 import processing.core.PVector;
+
+import com.google.common.base.Throwables;
 
 @SuppressWarnings("serial")
 public class LParticleSystem extends PApplet {
@@ -25,9 +32,33 @@ public class LParticleSystem extends PApplet {
   @Override public void setup() {
     size(1024, 768, OPENGL);
     smooth();
-    lsystem = LSystem.load("lparticlesystem/lsystem.json");
+    lsystem = LSystem.load(chooseFile());
   }
   
+  private File chooseFile() {
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (final Throwable rethrown) {
+      throw Throwables.propagate(rethrown);
+    }
+    final JFileChooser fileChooser = new JFileChooser("lparticlesystem");
+    fileChooser.setFileFilter(new FileFilter() {
+      
+      @Override public String getDescription() {
+        return "L-System JSON Files";
+      }
+      
+      @Override public boolean accept(final File f) {
+        return f.getName().endsWith(".json");
+      }
+    });
+    final int returnValue = fileChooser.showOpenDialog(this);
+    if (JFileChooser.APPROVE_OPTION == returnValue) {
+      return fileChooser.getSelectedFile();
+    }
+    return null;
+  }
+
   @Override public void draw() {
     lights();
     background(0);
@@ -42,12 +73,13 @@ public class LParticleSystem extends PApplet {
     translate(-eye.x, -eye.y, -eye.z);
     
     stroke(255);
-    strokeWeight(1.0f);
-    lsystem.draw(12, this);
-    strokeWeight(5.0f);
-    line(-100, 0, 0, 100, 0, 0);
-    line(0, -100, 0, 0, 100, 0);
-    line(0, 0, -100, 0, 0, 100);
+    strokeWeight(2.0f);
+    lsystem.draw(12, map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
+        map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f), this);
+//    strokeWeight(5.0f);
+//    line(-100, 0, 0, 100, 0, 0);
+//    line(0, -100, 0, 0, 100, 0);
+//    line(0, 0, -100, 0, 0, 100);
     
     final Quaternion inverse = orientation.reciprocal();
     forward = inverse.transform(NZ);
@@ -58,20 +90,26 @@ public class LParticleSystem extends PApplet {
   private void input() {
     if (keyDown('a')) {
       eye.sub(right);
+      eye.sub(right);
     }
     if (keyDown('d')) {
+      eye.add(right);
       eye.add(right);
     }
     if (keyDown('q')) {
       eye.sub(up);
+      eye.sub(up);
     }
     if (keyDown('z')) {
+      eye.add(up);
       eye.add(up);
     }
     if (keyDown('w')) {
       eye.add(forward);
+      eye.add(forward);
     }
     if (keyDown('s')) {
+      eye.sub(forward);
       eye.sub(forward);
     }
     if (keyCodeDown(RIGHT)) {

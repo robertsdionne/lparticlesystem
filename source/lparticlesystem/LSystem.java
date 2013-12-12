@@ -19,15 +19,18 @@ import com.google.gson.stream.JsonReader;
 
 public class LSystem {
   
-  public static LSystem load(final String filename) {
+  public static LSystem load(final File file) {
+    final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    if (null == file) {
+      return new LSystem("L", builder.build());
+    }
     final JsonParser parser = new JsonParser();
     JsonElement element;
     try {
-      element = parser.parse(new JsonReader(new FileReader(new File(filename))));
+      element = parser.parse(new JsonReader(new FileReader(file)));
     } catch (final Throwable rethrown) {
       throw Throwables.propagate(rethrown);
     }
-    final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
     if (null != element) {
       final JsonObject object = element.getAsJsonObject();
       final String start = object.entrySet().iterator().next().getKey();
@@ -87,7 +90,7 @@ public class LSystem {
     this.cachedSystem = null;
   }
   
-  public void draw(final int iterations, final PApplet applet) {
+  public void draw(final int iterations, float angleMod, float growMod, final PApplet applet) {
     final String system = maybeCacheSystem(iterations);
     State state = new State();
     final Deque<State> stack = new ArrayDeque<>(iterations);
@@ -96,41 +99,42 @@ public class LSystem {
       switch (system.charAt(i)) {
         case 'F': {
           state.position0 = state.position1.get();
-          final PVector step = state.orientation.transform(new PVector(state.stepSize, 0.0f, 0.0f));
+          final PVector step = state.orientation.transform(
+              new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
           state.position1.add(step);
-//          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
+          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
           applet.line(state.position0.x, state.position0.y, state.position0.z,
               state.position1.x, state.position1.y, state.position1.z);
           break;
         } case '+': {
-          state.h += state.stepAngle;
+          state.h += state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              Z, PApplet.radians(state.stepAngle)).times(state.orientation);
+              Z, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '-': {
-          state.h -= state.stepAngle;
+          state.h -= state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              NZ, PApplet.radians(state.stepAngle)).times(state.orientation);
+              NZ, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '/': {
-          state.h += state.stepAngle;
+          state.h += state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              X, PApplet.radians(state.stepAngle)).times(state.orientation);
+              X, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '\\': {
-          state.h -= state.stepAngle;
+          state.h -= state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              NX, PApplet.radians(state.stepAngle)).times(state.orientation);
+              NX, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '}': {
-          state.h += state.stepAngle;
+          state.h += state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              Y, PApplet.radians(state.stepAngle)).times(state.orientation);
+              Y, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '{': {
-          state.h -= state.stepAngle;
+          state.h -= state.stepAngle * angleMod;
           state.orientation = Quaternion.fromAxisAngle(
-              NY, PApplet.radians(state.stepAngle)).times(state.orientation);
+              NY, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '<': {
           state.s *= (1.0f + State.SIZE_GROWTH);
@@ -141,12 +145,12 @@ public class LSystem {
           state.stepSize *= (1.0f - State.SIZE_GROWTH);
           break;
         } case '(': {
-          state.b *= (1.0f + State.ANGLE_GROWTH);
-          state.stepAngle *= (1.0f - State.ANGLE_GROWTH);
+          state.b *= (1.0f + State.ANGLE_GROWTH * growMod);
+          state.stepAngle *= (1.0f - State.ANGLE_GROWTH * growMod);
           break;
         } case ')': {
-          state.b *= (1.0f - State.ANGLE_GROWTH);
-          state.stepAngle *= (1.0f + State.ANGLE_GROWTH);
+          state.b *= (1.0f - State.ANGLE_GROWTH * growMod);
+          state.stepAngle *= (1.0f + State.ANGLE_GROWTH * growMod);
           break;
         } case '[': {
           stack.push(state.clone());
