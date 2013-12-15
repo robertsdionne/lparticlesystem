@@ -22,24 +22,31 @@ public class LSystem {
   public static LSystem load(final File file) {
     final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
     if (null == file) {
-      return new LSystem("L", builder.build());
+      return new LSystem(new Parameters(), "L", builder.build());
     }
     final JsonParser parser = new JsonParser();
-    JsonElement element;
+    JsonObject object;
     try {
-      element = parser.parse(new JsonReader(new FileReader(file)));
+      object = parser.parse(new JsonReader(new FileReader(file))).getAsJsonObject();
     } catch (final Throwable rethrown) {
       throw Throwables.propagate(rethrown);
     }
-    if (null != element) {
-      final JsonObject object = element.getAsJsonObject();
-      final String start = object.entrySet().iterator().next().getKey();
-      for (final Entry<String, JsonElement> entry : object.entrySet()) {
+    if (null != object) {
+      final int iterations = object.get("iterations").getAsInt();
+      final JsonObject parameters = object.get("parameters").getAsJsonObject();
+      final float angleGrowth = parameters.get("angleGrowth").getAsFloat();
+      final float sizeGrowth = parameters.get("sizeGrowth").getAsFloat();
+      final float stepAngle = parameters.get("stepAngle").getAsFloat();
+      final float stepSize = parameters.get("stepSize").getAsFloat();
+      final JsonObject system = object.get("system").getAsJsonObject();
+      final String start = system.entrySet().iterator().next().getKey();
+      for (final Entry<String, JsonElement> entry : system.entrySet()) {
         builder.put(entry.getKey(), entry.getValue().getAsString());
       }
-      return new LSystem(start, builder.build());
+      return new LSystem(new Parameters(iterations, angleGrowth, sizeGrowth, stepAngle, stepSize),
+          start, builder.build());
     } else {
-      return new LSystem("L", builder.build());
+      return new LSystem(new Parameters(), "L", builder.build());
     }
   }
 
@@ -50,13 +57,33 @@ public class LSystem {
   private static final PVector NY = new PVector(0.0f, -1.0f, 0.0f);
   private static final PVector NZ = new PVector(0.0f, 0.0f, -1.0f);
   
+  private static class Parameters {
+
+    public final int iterations;
+    public final float angleGrowth;
+    public final float sizeGrowth; 
+    public final float stepAngle;
+    public final float stepSize;
+    
+    public Parameters() {
+      iterations = 0;
+      angleGrowth = sizeGrowth = stepAngle = stepSize = 0.0f;
+    }
+    
+    public Parameters(final int iterations, final float angleGrowth,
+        final float sizeGrowth, final float stepAngle, final float stepSize) {
+      this.iterations = iterations;
+      this.angleGrowth = angleGrowth;
+      this.sizeGrowth = sizeGrowth;
+      this.stepAngle = stepAngle;
+      this.stepSize = stepSize;
+    }
+  }
+  
   private static class State implements Cloneable {
     
-    public static final float SIZE_GROWTH = -1.359672f;
-    public static final float ANGLE_GROWTH = -0.138235f;
-    
-    public float stepAngle = -3963.7485f;
-    public float stepSize = 14.11f;
+    public float stepAngle = 0.0f;
+    public float stepSize = 10.0f;
     
     public PVector position0 = new PVector(), position1 = new PVector();
     public Quaternion orientation = new Quaternion();
@@ -78,22 +105,27 @@ public class LSystem {
     }
   }
 
+  private final Parameters parameters;
   private final String start;
   private final Map<String, String> rules;
   private int cachedIterationCount;
   private String cachedSystem;
   
-  private LSystem(final String start, final Map<String, String> rules) {
+  private LSystem(final Parameters parameters,
+      final String start, final Map<String, String> rules) {
+    this.parameters = parameters;
     this.start = start;
     this.rules = rules;
     this.cachedIterationCount = 0;
     this.cachedSystem = null;
   }
   
-  public void draw(final int iterations, float angleMod, float growMod, final PApplet applet) {
-    final String system = maybeCacheSystem(iterations);
+  public void draw(float angleMod, float growMod, final PApplet applet) {
+    final String system = maybeCacheSystem(parameters.iterations);
     State state = new State();
-    final Deque<State> stack = new ArrayDeque<>(iterations);
+    state.stepAngle = parameters.stepAngle;
+    state.stepSize = parameters.stepSize;
+    final Deque<State> stack = new ArrayDeque<>(parameters.iterations);
     applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
     for (int i = 0; i < system.length(); ++i) {
       switch (system.charAt(i)) {
@@ -137,20 +169,20 @@ public class LSystem {
               NY, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
           break;
         } case '<': {
-          state.s *= (1.0f + State.SIZE_GROWTH);
-          state.stepSize *= (1.0f + State.SIZE_GROWTH);
+          state.s *= (1.0f + parameters.sizeGrowth);
+          state.stepSize *= (1.0f + parameters.sizeGrowth);
           break;
         } case '>': {
-          state.s *= (1.0f - State.SIZE_GROWTH);
-          state.stepSize *= (1.0f - State.SIZE_GROWTH);
+          state.s *= (1.0f - parameters.sizeGrowth);
+          state.stepSize *= (1.0f - parameters.sizeGrowth);
           break;
         } case '(': {
-          state.b *= (1.0f + State.ANGLE_GROWTH * growMod);
-          state.stepAngle *= (1.0f - State.ANGLE_GROWTH * growMod);
+          state.b *= (1.0f + parameters.angleGrowth * growMod);
+          state.stepAngle *= (1.0f - parameters.angleGrowth * growMod);
           break;
         } case ')': {
-          state.b *= (1.0f - State.ANGLE_GROWTH * growMod);
-          state.stepAngle *= (1.0f + State.ANGLE_GROWTH * growMod);
+          state.b *= (1.0f - parameters.angleGrowth * growMod);
+          state.stepAngle *= (1.0f + parameters.angleGrowth * growMod);
           break;
         } case '[': {
           stack.push(state.clone());

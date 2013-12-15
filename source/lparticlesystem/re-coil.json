@@ -1,0 +1,15 @@
+{
+  "iterations": 30,
+  "parameters": {
+    "angleGrowth": "0.08145300000000245",
+    "sizeGrowth": "0.01",
+    "stepAngle": "-3832.29",
+    "stepSize": "4"
+  },
+  "system": {
+    "L": "S",
+    "S": "F>+[F-Y[S]]F)G",
+    "Y": "--[|F-F--FY]-",
+    "G": "FGF[+F]+Y"
+  }
+}

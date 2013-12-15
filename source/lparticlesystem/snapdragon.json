@@ -1,0 +1,14 @@
+{
+  "iterations": 31,
+  "parameters": {
+    "angleGrowth": "0.050017",
+    "sizeGrowth": "0.01",
+    "stepAngle": "-1250.6124",
+    "stepSize": "11.74"
+  },
+  "system": {
+    "L": "SYS",
+    "S": "F|+[F-Y[S]]",
+    "Y": "[|F-F+)F>Y]+"
+  }
+}

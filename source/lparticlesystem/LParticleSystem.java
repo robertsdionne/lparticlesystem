@@ -74,7 +74,7 @@ public class LParticleSystem extends PApplet {
     
     stroke(255);
     strokeWeight(2.0f);
-    lsystem.draw(12, map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
+    lsystem.draw(map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
         map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f), this);
 //    strokeWeight(5.0f);
 //    line(-100, 0, 0, 100, 0, 0);
