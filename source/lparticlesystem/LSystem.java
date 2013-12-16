@@ -3,7 +3,9 @@ package lparticlesystem;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -104,6 +106,17 @@ public class LSystem {
       }
     }
   }
+  
+  private static class Node {
+    public final List<State> states;
+    public final List<Node> children;
+    
+    public Node(final State state) {
+      states = new ArrayList<>();
+      children = new ArrayList<>();
+      states.add(state);
+    }
+  }
 
   private final Parameters parameters;
   private final String start;
@@ -123,10 +136,12 @@ public class LSystem {
   public void draw(float angleMod, float growMod, final PApplet applet) {
     final String system = maybeCacheSystem(parameters.iterations);
     State state = new State();
+    Node node = new Node(state.clone());
+    final Node root = node;
     state.stepAngle = parameters.stepAngle;
     state.stepSize = parameters.stepSize;
     final Deque<State> stack = new ArrayDeque<>(parameters.iterations);
-    applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
+    final Deque<Node> tree = new ArrayDeque<>(parameters.iterations);
     for (int i = 0; i < system.length(); ++i) {
       switch (system.charAt(i)) {
         case 'F': {
@@ -134,9 +149,12 @@ public class LSystem {
           final PVector step = state.orientation.transform(
               new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
           state.position1.add(step);
-          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
-          applet.line(state.position0.x, state.position0.y, state.position0.z,
-              state.position1.x, state.position1.y, state.position1.z);
+//          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
+//          applet.line(state.position0.x, state.position0.y, state.position0.z,
+//              state.position1.x, state.position1.y, state.position1.z);
+          final Node child = new Node(state.clone());
+          node.children.add(child);
+          node = child;
           break;
         } case '+': {
           state.h += state.stepAngle * angleMod;
@@ -186,9 +204,15 @@ public class LSystem {
           break;
         } case '[': {
           stack.push(state.clone());
+          final Node child = new Node(stack.peek());
+          node.children.add(child);
+          node = child;
+          tree.push(node);
           break;
         } case ']': {
-          state = stack.pop();
+          state = stack.pop().clone();
+          node = tree.pop();
+          node.states.add(state.clone());
           break;
         } case '!': {
           state.stepAngle *= -1.0f;
@@ -201,6 +225,21 @@ public class LSystem {
           break;
         }
       }
+    }
+
+    applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
+    drawNode(root, applet);
+  }
+  
+  private void drawNode(final Node node, final PApplet applet) {
+    for (int i = 0; i < node.children.size(); ++i) {
+      final Node child = node.children.get(i);
+      final State state0 = node.states.get(i);
+      final State state1 = child.states.get(0);
+      applet.stroke(applet.color((state1.h + 360.0f) % 360.0f, state1.s, state1.b));
+      applet.line(state0.position1.x, state0.position1.y, state0.position1.z,
+          state1.position1.x, state1.position1.y, state1.position1.z);
+      drawNode(child, applet);
     }
   }
 
