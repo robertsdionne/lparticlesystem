@@ -63,7 +63,7 @@ public class LParticleSystem extends PApplet {
 
   @Override public void draw() {
     lights();
-    background(0);
+    background(300, 100, 0.19f);
     
     input();
 
@@ -141,7 +141,7 @@ public class LParticleSystem extends PApplet {
   }
   
   @Override public void mousePressed() {
-    lsystem.addParticle(new PVector(mouseX - width, mouseY - height, 0.0f),
+    lsystem.addParticle(new PVector(mouseX, mouseY, 0.0f),
         map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
         map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f));
   }
