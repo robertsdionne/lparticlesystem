@@ -23,11 +23,12 @@ public class LParticleSystem extends PApplet {
   private final Map<Character, Boolean> keys = new HashMap<>();
   private final Map<Integer, Boolean> keyCodes = new HashMap<>();
   private LSystem lsystem;
-  private PVector eye = new PVector(0.0f, 0.0f, 500.0f),
+  private PVector eye = new PVector(0.0f, 0.0f, 1000.0f),
       forward = new PVector(0.0f, 0.0f, -1.0f),
       right = new PVector(1.0f, 0.0f, 0.0f),
       up = new PVector(0.0f, 1.0f, 0.0f);
   private Quaternion orientation = new Quaternion();
+  private boolean sys = false;
 
   @Override public void setup() {
     size(1024, 768, OPENGL);
@@ -62,7 +63,7 @@ public class LParticleSystem extends PApplet {
 
   @Override public void draw() {
     lights();
-//    background(0);
+    background(0);
     
     input();
 
@@ -76,7 +77,7 @@ public class LParticleSystem extends PApplet {
     stroke(255);
     strokeWeight(2.0f);
     lsystem.draw(map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
-        map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f), this);
+        map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f), this, sys);
 //    strokeWeight(5.0f);
 //    line(-100, 0, 0, 100, 0, 0);
 //    line(0, -100, 0, 0, 100, 0);
@@ -90,28 +91,34 @@ public class LParticleSystem extends PApplet {
 
   private void input() {
     if (keyDown('a')) {
-      eye.sub(right);
-      eye.sub(right);
+      final PVector step = right.get();
+      step.mult(10.0f);
+      eye.sub(step);
     }
     if (keyDown('d')) {
-      eye.add(right);
-      eye.add(right);
+      final PVector step = right.get();
+      step.mult(10.0f);
+      eye.add(step);
     }
     if (keyDown('q')) {
-      eye.sub(up);
-      eye.sub(up);
+      final PVector step = up.get();
+      step.mult(10.0f);
+      eye.sub(step);
     }
     if (keyDown('z')) {
-      eye.add(up);
-      eye.add(up);
+      final PVector step = up.get();
+      step.mult(10.0f);
+      eye.add(step);
     }
     if (keyDown('w')) {
-      eye.add(forward);
-      eye.add(forward);
+      final PVector step = forward.get();
+      step.mult(10.0f);
+      eye.add(step);
     }
     if (keyDown('s')) {
-      eye.sub(forward);
-      eye.sub(forward);
+      final PVector step = forward.get();
+      step.mult(10.0f);
+      eye.sub(step);
     }
     if (keyCodeDown(RIGHT)) {
       orientation = Quaternion.fromAxisAngle(Y, 0.1f).times(orientation);
@@ -134,7 +141,9 @@ public class LParticleSystem extends PApplet {
   }
   
   @Override public void mousePressed() {
-    lsystem.addParticle();
+    lsystem.addParticle(new PVector(mouseX - width, mouseY - height, 0.0f),
+        map(mouseX, 0, width, 1.0f - 0.01f, 1.0f + 0.01f),
+        map(mouseY, 0, height, 1.0f - 0.1f, 1.0f + 0.1f));
   }
   
   private boolean keyDown(char key) {
@@ -150,6 +159,9 @@ public class LParticleSystem extends PApplet {
       keyCodes.put(keyCode, true);
     } else {
       keys.put(key, true);
+    }
+    if ('\t' == key) {
+      sys = !sys;
     }
   }
   

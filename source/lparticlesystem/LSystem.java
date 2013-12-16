@@ -92,7 +92,7 @@ public class LSystem {
     
     public float h = 0.0f;
     public float s = 0.5f;
-    public float b = 0.5f;
+    public float b = 1.0f;
     
     public State clone() {
       try {
@@ -110,15 +110,17 @@ public class LSystem {
   private static class Node {
     public final State state;
     public final List<Node> children;
+    public int depth;
     
-    public Node(final State state) {
+    public Node(final State state, final int depth) {
       this.state = state;
       children = new ArrayList<>();
+      this.depth = depth;
     }
   }
   
   private static class Particle {
-    private static final float MAX_LIFE = 0.2f;
+    private static final float MAX_LIFE = 0.02f;
     
     public Node node; 
     public float life;
@@ -134,7 +136,7 @@ public class LSystem {
     public Particle(final Node node, final Particle parent) {
       this.node = node;
       initialize();
-//      position = parent.position.get();
+      position = parent.position.get();
 //      velocity.add(parent.velocity.get());
     }
     
@@ -151,12 +153,12 @@ public class LSystem {
       final PVector distance = velocity.get();
       distance.mult(dt);
       position.add(distance);
-      velocity.y += 98.1f * dt;
-      
-      if (position.y > 1000.0f) {
-        position.y = 1000.0f;
-        velocity.y *= -0.9f;
-      }
+//      velocity.y += 98.1f * dt;
+//      
+//      if (position.y > 1000.0f) {
+//        position.y = 1000.0f;
+//        velocity.y *= -0.9f;
+//      }
 
 //      if (position.x > 1000.0f) {
 //        position.x = 1000.0f;
@@ -178,7 +180,7 @@ public class LSystem {
           final PVector oldPosition = position.get();
           final PVector oldVelocity = velocity.get();
           initialize();
-//          position.set(oldPosition);
+          position.set(oldPosition);
 //          velocity.add(oldVelocity);
         } else {
           deadParticles.add(this);
@@ -186,10 +188,24 @@ public class LSystem {
       }
     }
     
-    public void draw(final PApplet applet) {
+    public void draw(float dt, final PApplet applet) {
 //      if (life < MAX_LIFE) {
-        applet.stroke(applet.color((node.state.h + 360.0f) % 360.0f, node.state.s, node.state.b));
-        applet.strokeWeight(1.0f);
+//      dt *= 10.0f;
+        applet.stroke(applet.color((node.state.h / 500.0f + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
+//        applet.fill(applet.color((node.state.h / 1000.0f + 360.0f) % 360.0f, node.depth / 100.0f, node.state.b));
+//        applet.noStroke();
+//        applet.beginShape(PApplet.TRIANGLE_STRIP);
+//        applet.vertex(
+//            position.x / 2.0f + velocity.x * dt / 4.0f,
+//            position.y / 2.0f + velocity.y * dt / 4.0f,
+//            position.z / 2.0f + velocity.z * dt / 4.0f);
+//        applet.vertex(position.x, position.y, position.z);
+//        applet.vertex(
+//            position.x + velocity.x * dt,
+//            position.y + velocity.y * dt,
+//            position.z + velocity.z * dt);
+//        applet.endShape();
+        applet.strokeWeight(10.0f);
         applet.point(position.x, position.y, position.z);
 //      }
     }
@@ -215,7 +231,7 @@ public class LSystem {
     this.cachedTree = null;
   }
   
-  public void draw(final float angleMod, final float growMod, final PApplet applet) {
+  public void draw(final float angleMod, final float growMod, final PApplet applet, boolean sys) {
     final int tick = applet.millis();
     final int ticks = tick - lastTick;
     lastTick = tick;
@@ -223,7 +239,9 @@ public class LSystem {
     final String system = maybeCacheSystem(parameters.iterations);
     final Node tree = buildTree(system, angleMod, growMod);
     applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
-//    drawNode(tree, applet);
+    if (sys) {
+      drawNode(tree, applet);
+    }
     final List<Particle> newParticles = new ArrayList<>();
     final List<Particle> deadParticles = new ArrayList<>();
     for (final Particle particle : particles) {
@@ -232,15 +250,15 @@ public class LSystem {
     particles.addAll(newParticles);
     particles.removeAll(deadParticles);
     for (final Particle particle : particles) {
-      particle.draw(applet);
+      particle.draw(dt, applet);
     }
     lastTick = tick;
   }
   
   private Node buildTree(final String system, final float angleMod, final float growMod) {
-    if (null == cachedTree) {
+//    if (null == cachedTree) {
       State state = new State();
-      Node node = new Node(state);
+      Node node = new Node(state, 0);
       final Node root = node;
       state.stepAngle = parameters.stepAngle;
       state.stepSize = parameters.stepSize;
@@ -253,7 +271,7 @@ public class LSystem {
             final PVector step = state.orientation.transform(
                 new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
             state.position1.add(step);
-            final Node child = new Node(state.clone());
+            final Node child = new Node(state.clone(), node.depth + 1);
             node.children.add(child);
             node = child;
             break;
@@ -296,11 +314,11 @@ public class LSystem {
             state.stepSize *= (1.0f - parameters.sizeGrowth);
             break;
           } case '(': {
-            state.b *= (1.0f + parameters.angleGrowth * growMod);
+            state.b *= (1.0f + 0.1f * growMod);
             state.stepAngle *= (1.0f - parameters.angleGrowth * growMod);
             break;
           } case ')': {
-            state.b *= (1.0f - parameters.angleGrowth * growMod);
+            state.b *= (1.0f - 0.1f * growMod);
             state.stepAngle *= (1.0f + parameters.angleGrowth * growMod);
             break;
           } case '[': {
@@ -324,21 +342,24 @@ public class LSystem {
         }
       }
       cachedTree = root;
-      addParticle();
-    }
+//      addParticle(new PVector(), angleMod, growMod);
+//    }
     return cachedTree;
   }
   
-  public void addParticle() {
-    if (null != cachedTree) {
-      particles.add(new Particle(cachedTree));
-    }
+  public void addParticle(final PVector position, final float angleMod, final float growMod) {
+//    if (null != cachedTree) {
+      final Particle particle = new Particle(buildTree(cachedSystem, angleMod, growMod));
+      particle.position.add(position);
+      particles.add(particle);
+//    }
   }
 
   private void drawNode(final Node node, final PApplet applet) {
     final State state0 = node.state;
-    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
-    applet.strokeWeight(1.0f);
+    applet.stroke(applet.color((node.state.h / 500.0f + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
+//    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
+    applet.strokeWeight(2.0f);
     applet.line(
         state0.position0.x, state0.position0.y, state0.position0.z,
         state0.position1.x, state0.position1.y, state0.position1.z);
