@@ -23,7 +23,7 @@ public class LParticleSystem extends PApplet {
   private final Map<Character, Boolean> keys = new HashMap<>();
   private final Map<Integer, Boolean> keyCodes = new HashMap<>();
   private LSystem lsystem;
-  private PVector eye = new PVector(0.0f, 0.0f, 100.0f),
+  private PVector eye = new PVector(0.0f, 0.0f, 500.0f),
       forward = new PVector(0.0f, 0.0f, -1.0f),
       right = new PVector(1.0f, 0.0f, 0.0f),
       up = new PVector(0.0f, 1.0f, 0.0f);
@@ -32,6 +32,7 @@ public class LParticleSystem extends PApplet {
   @Override public void setup() {
     size(1024, 768, OPENGL);
     smooth();
+    background(0);
     lsystem = LSystem.load(chooseFile());
   }
   

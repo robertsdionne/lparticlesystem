@@ -1,5 +1,5 @@
 {
-  "iterations": 8,
+  "iterations": 14,
   "parameters": {
     "angleGrowth": "0.25",
     "sizeGrowth": "0.1",
@@ -8,6 +8,6 @@
   },
   "system": {
     "A": "FB",
-    "B": "/F}F[-(<FB][+(<FB]"
+    "B": "[-(<FB][+(<FB]"
   }
 }

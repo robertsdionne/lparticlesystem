@@ -108,143 +108,204 @@ public class LSystem {
   }
   
   private static class Node {
-    public final List<State> states;
+    public final State state;
     public final List<Node> children;
     
     public Node(final State state) {
-      states = new ArrayList<>();
+      this.state = state;
       children = new ArrayList<>();
-      states.add(state);
+    }
+  }
+  
+  private static class Particle {
+    private static final float MAX_LIFE = 0.01f;
+    
+    public Node node; 
+    public float life;
+    
+    public Particle(final Node node) {
+      this.node = node;
+      life = 0.0f;
+    }
+    
+    public void update(
+        final float dt, final List<Particle> newParticles, final List<Particle> deadParticles) {
+      life += dt;
+      if (life > MAX_LIFE) {
+        for (int i = 1; i < node.children.size(); ++i) {
+          newParticles.add(new Particle(node.children.get(i)));
+        }
+        if (node.children.size() > 0) {
+          life = 0.0f;
+          node = node.children.get(0);
+        } else {
+          deadParticles.add(this);
+        }
+      }
+    }
+    
+    public void draw(final PApplet applet) {
+//      if (life < MAX_LIFE) {
+        applet.stroke(applet.color((node.state.h + 360.0f) % 360.0f, node.state.s, node.state.b));
+        applet.strokeWeight(5.0f);
+        applet.point(
+            PApplet.lerp(node.state.position0.x, node.state.position1.x, life / MAX_LIFE),
+            PApplet.lerp(node.state.position0.y, node.state.position1.y, life / MAX_LIFE),
+            PApplet.lerp(node.state.position0.z, node.state.position1.z, life / MAX_LIFE));
+//      }
     }
   }
 
   private final Parameters parameters;
   private final String start;
   private final Map<String, String> rules;
+  private final List<Particle> particles;
   private int cachedIterationCount;
   private String cachedSystem;
+  private Node cachedTree;
+  private int lastTick = 0;
   
   private LSystem(final Parameters parameters,
       final String start, final Map<String, String> rules) {
     this.parameters = parameters;
     this.start = start;
     this.rules = rules;
+    this.particles = new ArrayList<>();
     this.cachedIterationCount = 0;
     this.cachedSystem = null;
+    this.cachedTree = null;
   }
   
   public void draw(final float angleMod, final float growMod, final PApplet applet) {
+    final int tick = applet.millis();
+    final int ticks = tick - lastTick;
+    lastTick = tick;
+    final float dt = ticks / 1000.0f;
     final String system = maybeCacheSystem(parameters.iterations);
     final Node tree = buildTree(system, angleMod, growMod);
     applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
-    drawNode(tree, applet);
+//    drawNode(tree, applet);
+    final List<Particle> newParticles = new ArrayList<>();
+    final List<Particle> deadParticles = new ArrayList<>();
+    for (final Particle particle : particles) {
+      particle.update(dt, newParticles, deadParticles);
+    }
+    particles.addAll(newParticles);
+    particles.removeAll(deadParticles);
+    for (final Particle particle : particles) {
+      particle.draw(applet);
+    }
+    lastTick = tick;
   }
   
   private Node buildTree(final String system, final float angleMod, final float growMod) {
-    State state = new State();
-    Node node = new Node(state.clone());
-    final Node root = node;
-    state.stepAngle = parameters.stepAngle;
-    state.stepSize = parameters.stepSize;
-    final Deque<State> stack = new ArrayDeque<>(parameters.iterations);
-    final Deque<Node> tree = new ArrayDeque<>(parameters.iterations);
-    for (int i = 0; i < system.length(); ++i) {
-      switch (system.charAt(i)) {
-        case 'F': {
-          final PVector step = state.orientation.transform(
-              new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
-          state.position1.add(step);
-          final Node child = new Node(state.clone());
-          node.children.add(child);
-          node = child;
-          state.position0 = state.position1.get();
-          break;
-        } case '+': {
-          state.h += state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              Z, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '-': {
-          state.h -= state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              NZ, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '/': {
-          state.h += state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              X, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '\\': {
-          state.h -= state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              NX, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '}': {
-          state.h += state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              Y, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '{': {
-          state.h -= state.stepAngle * angleMod;
-          state.orientation = Quaternion.fromAxisAngle(
-              NY, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
-          break;
-        } case '<': {
-          state.s *= (1.0f + parameters.sizeGrowth);
-          state.stepSize *= (1.0f + parameters.sizeGrowth);
-          break;
-        } case '>': {
-          state.s *= (1.0f - parameters.sizeGrowth);
-          state.stepSize *= (1.0f - parameters.sizeGrowth);
-          break;
-        } case '(': {
-          state.b *= (1.0f + parameters.angleGrowth * growMod);
-          state.stepAngle *= (1.0f - parameters.angleGrowth * growMod);
-          break;
-        } case ')': {
-          state.b *= (1.0f - parameters.angleGrowth * growMod);
-          state.stepAngle *= (1.0f + parameters.angleGrowth * growMod);
-          break;
-        } case '[': {
-          stack.push(state.clone());
-          tree.push(node);
-          break;
-        } case ']': {
-          state = stack.pop().clone();
-          node = tree.pop();
-          node.states.add(state.clone());
-          break;
-        } case '!': {
-          state.stepAngle *= -1.0f;
-          break;
-        } case '|': {
-          state.orientation = Quaternion.fromAxisAngle(
-              Z, PApplet.radians(180.0f)).times(state.orientation);
-          break;
-        } default: {
-          break;
+    if (null == cachedTree) {
+      State state = new State();
+      Node node = new Node(state);
+      final Node root = node;
+      state.stepAngle = parameters.stepAngle;
+      state.stepSize = parameters.stepSize;
+      final Deque<State> stack = new ArrayDeque<>(parameters.iterations);
+      final Deque<Node> tree = new ArrayDeque<>(parameters.iterations);
+      for (int i = 0; i < system.length(); ++i) {
+        switch (system.charAt(i)) {
+          case 'F': {
+            state.position0 = state.position1.get();
+            final PVector step = state.orientation.transform(
+                new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
+            state.position1.add(step);
+            final Node child = new Node(state.clone());
+            node.children.add(child);
+            node = child;
+            break;
+          } case '+': {
+            state.h += state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                Z, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '-': {
+            state.h -= state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                NZ, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '/': {
+            state.h += state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                X, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '\\': {
+            state.h -= state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                NX, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '}': {
+            state.h += state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                Y, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '{': {
+            state.h -= state.stepAngle * angleMod;
+            state.orientation = Quaternion.fromAxisAngle(
+                NY, PApplet.radians(state.stepAngle * angleMod)).times(state.orientation);
+            break;
+          } case '<': {
+            state.s *= (1.0f + parameters.sizeGrowth);
+            state.stepSize *= (1.0f + parameters.sizeGrowth);
+            break;
+          } case '>': {
+            state.s *= (1.0f - parameters.sizeGrowth);
+            state.stepSize *= (1.0f - parameters.sizeGrowth);
+            break;
+          } case '(': {
+            state.b *= (1.0f + parameters.angleGrowth * growMod);
+            state.stepAngle *= (1.0f - parameters.angleGrowth * growMod);
+            break;
+          } case ')': {
+            state.b *= (1.0f - parameters.angleGrowth * growMod);
+            state.stepAngle *= (1.0f + parameters.angleGrowth * growMod);
+            break;
+          } case '[': {
+            stack.push(state.clone());
+            tree.push(node);
+            break;
+          } case ']': {
+            state = stack.pop().clone();
+            node = tree.pop();
+            break;
+          } case '!': {
+            state.stepAngle *= -1.0f;
+            break;
+          } case '|': {
+            state.orientation = Quaternion.fromAxisAngle(
+                Z, PApplet.radians(180.0f)).times(state.orientation);
+            break;
+          } default: {
+            break;
+          }
         }
       }
+      cachedTree = root;
+      particles.add(new Particle(root));
     }
-    return root;
+    return cachedTree;
   }
 
   private void drawNode(final Node node, final PApplet applet) {
+    final State state0 = node.state;
+    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
+    applet.strokeWeight(1.0f);
+    applet.line(
+        state0.position0.x, state0.position0.y, state0.position0.z,
+        state0.position1.x, state0.position1.y, state0.position1.z);
+    float s = (applet.millis() / 1000.0f) % 1.0f;
+    applet.strokeWeight(5.0f);
+//    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
+//    applet.point(
+//        PApplet.lerp(state0.position0.x, state0.position1.x, s),
+//        PApplet.lerp(state0.position0.y, state0.position1.y, s),
+//        PApplet.lerp(state0.position0.z, state0.position1.z, s));
     for (int i = 0; i < node.children.size(); ++i) {
       final Node child = node.children.get(i);
-      final State state0 = node.states.get(i);
-      final State state1 = child.states.get(0);
-      applet.stroke(applet.color((state1.h + 360.0f) % 360.0f, state1.s, state1.b));
-      float s = (applet.millis() / 1000.0f) % 1.0f;
-      applet.strokeWeight(1.0f);
-      applet.line(
-          state0.position1.x, state0.position1.y, state0.position1.z,
-          state1.position1.x, state1.position1.y, state1.position1.z);
-      applet.strokeWeight(5.0f);
-      applet.point(
-          PApplet.lerp(state0.position1.x, state1.position1.x, s),
-          PApplet.lerp(state0.position1.y, state1.position1.y, s),
-          PApplet.lerp(state0.position1.z, state1.position1.z, s));
       drawNode(child, applet);
     }
   }
