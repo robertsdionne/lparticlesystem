@@ -52,6 +52,8 @@ public class LSystem {
     }
   }
 
+  private static final float HUE_DIVISOR = 500.0f;
+  
   private static final PVector X = new PVector(1.0f, 0.0f, 0.0f);
   private static final PVector Y = new PVector(0.0f, 1.0f, 0.0f);
   private static final PVector Z = new PVector(0.0f, 0.0f, 1.0f);
@@ -191,7 +193,7 @@ public class LSystem {
     public void draw(float dt, final PApplet applet) {
 //      if (life < MAX_LIFE) {
 //      dt *= 10.0f;
-        applet.stroke(applet.color((node.state.h / 500.0f + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
+        applet.stroke(applet.color((node.state.h / HUE_DIVISOR + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
 //        applet.fill(applet.color((node.state.h / 1000.0f + 360.0f) % 360.0f, node.depth / 100.0f, node.state.b));
 //        applet.noStroke();
 //        applet.beginShape(PApplet.TRIANGLE_STRIP);
@@ -357,7 +359,7 @@ public class LSystem {
 
   private void drawNode(final Node node, final PApplet applet) {
     final State state0 = node.state;
-    applet.stroke(applet.color((node.state.h / 500.0f + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
+    applet.stroke(applet.color((node.state.h / HUE_DIVISOR + 360.0f) % 360.0f, node.depth / 50.0f, node.state.b));
 //    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
     applet.strokeWeight(2.0f);
     applet.line(

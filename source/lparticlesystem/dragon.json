@@ -1,0 +1,14 @@
+{
+  "iterations": 12,
+  "parameters": {
+    "angleGrowth": "0.01",
+    "sizeGrowth": "0.25",
+    "stepAngle": "90.0",
+    "stepSize": "14.11"
+  },
+  "system": {
+    "S": "FX",
+    "X": "(X+YF",
+    "Y": ")FX-Y"
+  }
+}
