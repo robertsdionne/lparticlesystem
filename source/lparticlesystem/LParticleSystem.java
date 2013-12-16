@@ -33,7 +33,7 @@ public class LParticleSystem extends PApplet {
   @Override public void setup() {
     size(1024, 768, OPENGL);
     smooth();
-    background(0);
+    background(300, 100, 0.19f);
     lsystem = LSystem.load(chooseFile());
   }
   
@@ -64,6 +64,7 @@ public class LParticleSystem extends PApplet {
   @Override public void draw() {
     lights();
     background(300, 100, 0.19f);
+//    background(0);
     
     input();
 
