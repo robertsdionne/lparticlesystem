@@ -62,7 +62,7 @@ public class LParticleSystem extends PApplet {
 
   @Override public void draw() {
     lights();
-    background(0);
+//    background(0);
     
     input();
 
@@ -131,6 +131,10 @@ public class LParticleSystem extends PApplet {
     if (keyDown('.')) {
       orientation = Quaternion.fromAxisAngle(NZ, 0.1f).times(orientation);
     }
+  }
+  
+  @Override public void mousePressed() {
+    lsystem.addParticle();
   }
   
   private boolean keyDown(char key) {

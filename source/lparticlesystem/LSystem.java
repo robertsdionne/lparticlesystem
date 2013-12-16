@@ -118,26 +118,68 @@ public class LSystem {
   }
   
   private static class Particle {
-    private static final float MAX_LIFE = 0.01f;
+    private static final float MAX_LIFE = 0.2f;
     
     public Node node; 
     public float life;
     
+    private PVector position;
+    private PVector velocity;
+    
     public Particle(final Node node) {
       this.node = node;
+      initialize();
+    }
+    
+    public Particle(final Node node, final Particle parent) {
+      this.node = node;
+      initialize();
+//      position = parent.position.get();
+//      velocity.add(parent.velocity.get());
+    }
+    
+    private void initialize() {
+      position = node.state.position0.get();
+      velocity = node.state.position1.get();
+      velocity.sub(position);
+      velocity.div(MAX_LIFE);
       life = 0.0f;
     }
     
     public void update(
         final float dt, final List<Particle> newParticles, final List<Particle> deadParticles) {
+      final PVector distance = velocity.get();
+      distance.mult(dt);
+      position.add(distance);
+      velocity.y += 98.1f * dt;
+      
+      if (position.y > 1000.0f) {
+        position.y = 1000.0f;
+        velocity.y *= -0.9f;
+      }
+
+//      if (position.x > 1000.0f) {
+//        position.x = 1000.0f;
+//        velocity.x *= -0.9f;
+//      }
+
+//      if (position.x < -1000.0f) {
+//        position.x = -1000.0f;
+//        velocity.x *= -0.9f;
+//      }
+      
       life += dt;
       if (life > MAX_LIFE) {
         for (int i = 1; i < node.children.size(); ++i) {
-          newParticles.add(new Particle(node.children.get(i)));
+          newParticles.add(new Particle(node.children.get(i), this));
         }
         if (node.children.size() > 0) {
-          life = 0.0f;
           node = node.children.get(0);
+          final PVector oldPosition = position.get();
+          final PVector oldVelocity = velocity.get();
+          initialize();
+//          position.set(oldPosition);
+//          velocity.add(oldVelocity);
         } else {
           deadParticles.add(this);
         }
@@ -147,11 +189,8 @@ public class LSystem {
     public void draw(final PApplet applet) {
 //      if (life < MAX_LIFE) {
         applet.stroke(applet.color((node.state.h + 360.0f) % 360.0f, node.state.s, node.state.b));
-        applet.strokeWeight(5.0f);
-        applet.point(
-            PApplet.lerp(node.state.position0.x, node.state.position1.x, life / MAX_LIFE),
-            PApplet.lerp(node.state.position0.y, node.state.position1.y, life / MAX_LIFE),
-            PApplet.lerp(node.state.position0.z, node.state.position1.z, life / MAX_LIFE));
+        applet.strokeWeight(1.0f);
+        applet.point(position.x, position.y, position.z);
 //      }
     }
   }
@@ -285,9 +324,15 @@ public class LSystem {
         }
       }
       cachedTree = root;
-      particles.add(new Particle(root));
+      addParticle();
     }
     return cachedTree;
+  }
+  
+  public void addParticle() {
+    if (null != cachedTree) {
+      particles.add(new Particle(cachedTree));
+    }
   }
 
   private void drawNode(final Node node, final PApplet applet) {
@@ -298,12 +343,6 @@ public class LSystem {
         state0.position0.x, state0.position0.y, state0.position0.z,
         state0.position1.x, state0.position1.y, state0.position1.z);
     float s = (applet.millis() / 1000.0f) % 1.0f;
-    applet.strokeWeight(5.0f);
-//    applet.stroke(applet.color((state0.h + 360.0f) % 360.0f, state0.s, state0.b));
-//    applet.point(
-//        PApplet.lerp(state0.position0.x, state0.position1.x, s),
-//        PApplet.lerp(state0.position0.y, state0.position1.y, s),
-//        PApplet.lerp(state0.position0.z, state0.position1.z, s));
     for (int i = 0; i < node.children.size(); ++i) {
       final Node child = node.children.get(i);
       drawNode(child, applet);
