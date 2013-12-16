@@ -133,8 +133,14 @@ public class LSystem {
     this.cachedSystem = null;
   }
   
-  public void draw(float angleMod, float growMod, final PApplet applet) {
+  public void draw(final float angleMod, final float growMod, final PApplet applet) {
     final String system = maybeCacheSystem(parameters.iterations);
+    final Node tree = buildTree(system, angleMod, growMod);
+    applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
+    drawNode(tree, applet);
+  }
+  
+  private Node buildTree(final String system, final float angleMod, final float growMod) {
     State state = new State();
     Node node = new Node(state.clone());
     final Node root = node;
@@ -145,16 +151,13 @@ public class LSystem {
     for (int i = 0; i < system.length(); ++i) {
       switch (system.charAt(i)) {
         case 'F': {
-          state.position0 = state.position1.get();
           final PVector step = state.orientation.transform(
               new PVector(state.stepSize * angleMod, 0.0f, 0.0f));
           state.position1.add(step);
-//          applet.stroke(applet.color((state.h + 360.0f) % 360.0f, state.s, state.b));
-//          applet.line(state.position0.x, state.position0.y, state.position0.z,
-//              state.position1.x, state.position1.y, state.position1.z);
           final Node child = new Node(state.clone());
           node.children.add(child);
           node = child;
+          state.position0 = state.position1.get();
           break;
         } case '+': {
           state.h += state.stepAngle * angleMod;
@@ -204,9 +207,6 @@ public class LSystem {
           break;
         } case '[': {
           stack.push(state.clone());
-          final Node child = new Node(stack.peek());
-          node.children.add(child);
-          node = child;
           tree.push(node);
           break;
         } case ']': {
@@ -226,19 +226,25 @@ public class LSystem {
         }
       }
     }
-
-    applet.colorMode(PApplet.HSB, 360.0f, 1.0f, 1.0f);
-    drawNode(root, applet);
+    return root;
   }
-  
+
   private void drawNode(final Node node, final PApplet applet) {
     for (int i = 0; i < node.children.size(); ++i) {
       final Node child = node.children.get(i);
       final State state0 = node.states.get(i);
       final State state1 = child.states.get(0);
       applet.stroke(applet.color((state1.h + 360.0f) % 360.0f, state1.s, state1.b));
-      applet.line(state0.position1.x, state0.position1.y, state0.position1.z,
+      float s = (applet.millis() / 1000.0f) % 1.0f;
+      applet.strokeWeight(1.0f);
+      applet.line(
+          state0.position1.x, state0.position1.y, state0.position1.z,
           state1.position1.x, state1.position1.y, state1.position1.z);
+      applet.strokeWeight(5.0f);
+      applet.point(
+          PApplet.lerp(state0.position1.x, state1.position1.x, s),
+          PApplet.lerp(state0.position1.y, state1.position1.y, s),
+          PApplet.lerp(state0.position1.z, state1.position1.z, s));
       drawNode(child, applet);
     }
   }

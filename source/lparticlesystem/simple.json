@@ -2,12 +2,12 @@
   "iterations": 8,
   "parameters": {
     "angleGrowth": "0.25",
-    "sizeGrowth": "0.01",
+    "sizeGrowth": "0.1",
     "stepAngle": "45.0",
     "stepSize": "14.11"
   },
   "system": {
     "A": "FB",
-    "B": "+F+F[-(<FB][+(<FB]"
+    "B": "/F}F[-(<FB][+(<FB]"
   }
 }
